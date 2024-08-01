@@ -8,11 +8,17 @@ import time
 from dataclasses import dataclass
 from random import choice
 from typing import Literal, Optional
-
 import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
+from googlesearch import search
+import cv2
+import numpy as np
+from io import BytesIO
+from PIL import Image
+import requests
+
 # DOTENV
 from dotenv import load_dotenv
 
@@ -35,14 +41,41 @@ async def on_ready():
     await bot.change_presence(
         activity=discord.CustomActivity("I've gone rogue 😈"))
     print("Bot is ready!")
-    await bot.add_cog(Configuration(bot))
-    await bot.add_cog(Gamble(bot))
-    await bot.add_cog(ChannelCog(bot))
+
+@bot.event
+async def setup_hook():
+    for ext in extensions:
+        await bot.load_extension(ext)
+extensions = [
+    "cogs.configuration",
+    "cogs.fun",
+    "cogs.channel"
+    "cogs.moderation"
+    "cogs.message"
+]
 
 
 # DM MESSAGE
 @bot.listen()
 async def on_message(message):
+    if message.author.id == 716390085896962058:  # Pokétwo bot's user ID
+        for embed in message.embeds:
+            if embed.title and "Your 🎯 Archery Game Targets" in embed.title:
+                # Download the image from the embed
+                if embed.image and embed.image.url:
+                    image_url = embed.image.url
+                    image_data = requests.get(image_url).content
+                    image_object = BytesIO(image_data)
+                
+                # Convert BytesIO image object to OpenCV image
+                image_pil = Image.open(image_object)
+                image_cv = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+                
+                # Find dart emojis
+                coordinates = find_dart_emojis(image_cv)
+                parsed_string = ' '.join([item.lower() for item in coordinates])
+                await message.channel.send(f"<@716390085896962058> ev m shoot {parsed_string}")
+
     if message.author == bot.user:
         return
 
@@ -52,349 +85,6 @@ async def on_message(message):
     else:
         return
     await bot.process_commands(message)
-
-
-# COG: Configuration. SYNC, PING
-
-
-class Configuration(commands.Cog):
-
-    def __init__(self, bot):
-        self.bot = bot
-        self._last_member = None
-# SYNC
-
-    @commands.hybrid_command()
-    @commands.guild_only()
-    @commands.is_owner()
-    async def sync(self,
-                   ctx: commands.Context,
-                   guilds: commands.Greedy[discord.Object],
-                   spec: Optional[Literal["~", "*", "^"]] = None) -> None:
-        if not guilds:
-            if spec == "~":
-                synced = await ctx.bot.tree.sync(guild=ctx.guild)
-            elif spec == "*":
-                ctx.bot.tree.copy_global_to(guild=ctx.guild)
-                synced = await ctx.bot.tree.sync(guild=ctx.guild)
-            elif spec == "^":
-                ctx.bot.tree.clear_commands(guild=ctx.guild)
-                await ctx.bot.tree.sync(guild=ctx.guild)
-                synced = []
-            else:
-                synced = await ctx.bot.tree.sync()
-
-            await ctx.send(
-                f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
-            )
-            return
-
-        ret = 0
-        for guild in guilds:
-            try:
-                await ctx.bot.tree.sync(guild=guild)
-            except discord.HTTPException:
-                pass
-            else:
-                ret += 1
-
-        await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
-# PING
-
-    @commands.hybrid_command()
-    async def ping(self, ctx):
-        """ Replies with the Bot's latency """
-        await ctx.send(f"Pong! {int(bot.latency*1000)}ms")
-
-
-# LOGGING IN DISCORD
-#@bot.event
-#async def on_message_delete(message):
-#    z = bot.get_channel(1255214396951498883)
-#    embed = discord.Embed(title = f"{message.author}'s Message was Deleted", description = f"Deleted Message: {message.content}\nAuthor: {message.author.mention}\nLocation: {message.channel.mention}", timestamp = datetime.now(), color = discord.Colour.red())
-#    await z.send(embed = embed)
-
-
-# COG: Gamble. ROLL, COINFLIP
-class Gamble(commands.Cog):
-
-    def __init__(self, bot):
-        self.bot = bot
-        self._last_member = None
-# ROLL
-
-    @commands.hybrid_command()
-    async def roll(self, ctx, num: int):
-        """ Rolls a random number """
-        rollnum = random.randint(1, num)
-        rng = discord.Embed(
-            title=f"{ctx.author.display_name} rolled a {rollnum}",
-            colour=0x00f5f1)
-
-        await ctx.send(embed=rng)
-# COINFLIP
-
-    @commands.hybrid_command()
-    async def coinflip(self, ctx):
-        """ Flips a coin """
-        determine_flip = [1, 0]
-        flipping = discord.Embed(title="A coin has been flipped...",
-                                 colour=0x00b8f5)
-        flipping.set_image(url="https://i.imgur.com/nULLx1x.gif")
-        msg = await ctx.send(embed=flipping)
-        await asyncio.sleep(3)
-        if random.choice(determine_flip) == 1:
-            heads = discord.Embed(title="A coin has been flipped...",
-                                  description=f"The coin landed on heads!",
-                                  colour=0x00b8f5)
-            heads.set_image(url="https://i.imgur.com/h1Os447.png")
-            await msg.edit(embed=heads)
-        else:
-            tails = discord.Embed(title="A coin has been flipped...",
-                                  description=f"The coin landed on tails!",
-                                  colour=0x00b8f5)
-            tails.set_image(url="https://i.imgur.com/EiBLhPX.png")
-            await msg.edit(embed=tails)
-
-
-# COG: Channel Management. LOCK, UNLOCK, HIDE, UNHIDE
-class ChannelCog(commands.Cog, name="Channel Management"):
-
-    def __init__(self, bot):
-        self.bot = bot
-        self._last_member = None
-# LOCK
-
-    @commands.hybrid_command()
-    @commands.has_permissions(manage_channels=True)
-    async def lock(self, ctx, channel: Optional[discord.TextChannel] = None):
-        """ Locks the channel the command is used in, or a specified channel """
-        channel = channel or ctx.channel
-        overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
-        if overwrite.send_messages is False:
-            alreadylocked = discord.Embed(
-                title="Error!",
-                description=f"The channel is already Locked!",
-                colour=0xf54242)
-            await ctx.send(embed=alreadylocked)
-            return
-        overwrite.send_messages = False
-        await ctx.channel.set_permissions(ctx.guild.default_role,
-                                          overwrite=overwrite)
-        lock = discord.Embed(title="Channel Locked",
-                             description=f"The channel has been Locked!",
-                             colour=0xe04d5c)
-        await ctx.send(embed=lock)
-        return
-
-    @lock.error
-    async def lock_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            await ctx.send('You do not have permission to use this command!')
-        else:
-            raise error
-# UNLOCK CMD
-
-    @commands.hybrid_command()
-    @commands.has_permissions(manage_channels=True)
-    async def unlock(self, ctx, channel: Optional[discord.TextChannel] = None):
-        """ Unlocks the channel the command is used in, or a specified channel """
-        channel = channel or ctx.channel
-        overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
-        if overwrite.send_messages is True:
-            notlocked = discord.Embed(title="Error!",
-                                      description=f"The channel isn't locked!",
-                                      colour=0xf54242)
-            await ctx.send(embed=notlocked)
-            return
-        overwrite.send_messages = True
-        await ctx.channel.set_permissions(ctx.guild.default_role,
-                                          overwrite=overwrite)
-        unlock = discord.Embed(title="Channel Unlocked",
-                               description=f"The channel has been Unlocked!",
-                               colour=0xe04d5c)
-        await ctx.send(embed=unlock)
-        return
-
-    @unlock.error
-    async def unlock_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            await ctx.send('You do not have permission to use this command!')
-        else:
-            raise error
-# HIDE CMD
-
-    @commands.hybrid_command()
-    @commands.has_permissions(manage_channels=True)
-    async def hide(self, ctx, channel: Optional[discord.TextChannel] = None):
-        """ Hides the channel the command is used in, or a specified channel """
-        channel = channel or ctx.channel
-        overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
-        if overwrite.view_channel is False:
-            alreadyhidden = discord.Embed(
-                title="Error!",
-                description=f"The channel is already hidden!",
-                colour=0xf54242)
-            await ctx.send(embed=alreadyhidden)
-            return
-        overwrite.view_channel = False
-        await ctx.channel.set_permissions(ctx.guild.default_role,
-                                          overwrite=overwrite)
-        hide = discord.Embed(title="Channel Hidden",
-                             description=f"The channel has been Hidden!",
-                             colour=0xe04d5c)
-        await ctx.send(embed=hide)
-        return
-
-    @hide.error
-    async def hide_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            await ctx.send('You do not have permission to use this command!')
-        else:
-            raise error
-# UNHIDE CMD
-
-    @commands.hybrid_command()
-    @commands.has_permissions(manage_channels=True)
-    async def unhide(self, ctx, channel: Optional[discord.TextChannel] = None):
-        """ Unhides the channel the command is used in, or a specified channel """
-        channel = channel or ctx.channel
-        overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
-        if overwrite.view_channel is True:
-            nothidden = discord.Embed(title="Error!",
-                                      description=f"The channel isn't hidden!",
-                                      colour=0xf54242)
-            await ctx.send(embed=nothidden)
-            return
-        overwrite.view_channel = True
-        await ctx.channel.set_permissions(ctx.guild.default_role,
-                                          overwrite=overwrite)
-        unhide = discord.Embed(title="Channel Unhidden",
-                               description=f"The channel has been Unhidden!",
-                               colour=0xe04d5c)
-        await ctx.send(embed=unhide)
-        return
-
-    @unhide.error
-    async def unhide_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            await ctx.send('You do not have permission to use this command!')
-        else:
-            raise error
-
-
-# BAN CMD
-@bot.hybrid_command()
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, user: discord.User, *, reason="***No reason provided.***"):
-    """ Bans a user from the guild """
-    ban = discord.Embed(
-        title=f"<:bonk:1255222332830515304> | Banned {user.name}!",
-        description=f"Reason: {reason}\nBy: {ctx.author.mention}",
-        color=discord.Color.brand_red())
-    await ctx.message.delete()
-    await ctx.channel.send(embed=ban)
-    bandm = discord.Embed(
-        title=f"<:bonk:1255222332830515304> | You were Banned!",
-        description=f"Reason: {reason}\nBy: {ctx.author.mention}")
-    await user.send(embed=bandm)
-    await ctx.guild.ban(user)
-
-
-# UNBAN CMD
-@commands.has_permissions(moderate_members=True)
-@bot.hybrid_command()
-async def unban(ctx,
-                user: discord.User,
-                *,
-                reason="***No reason provided.***"):
-    """ Unbans a user from the guild """
-    unban = discord.Embed(
-        title=f"<:catcri:1248705148293742723> | Unbanned {user.name}!",
-        description=f"Reason: {reason}\nBy: {ctx.author.mention}",
-        color=discord.Color.brand_green())
-    hellowhat = discord.Embed(
-        title=f"<:NOO:1248704955653820436> | {user.name} isn't Banned!",
-        color=discord.Color.teal())
-    try:
-        entry = await ctx.guild.fetch_ban(discord.Object(user.id))
-    except discord.NotFound:
-        await ctx.channel.send(embed=hellowhat)
-    await ctx.guild.unban(discord.Object(user.id))
-    await ctx.channel.send(embed=unban)
-    await ctx.message.delete()
-    return
-
-
-# MUTE CMD
-class TimedeltaConverter(commands.Converter):
-
-    async def convert(self, ctx: commands.Context,
-                      arg: str) -> datetime.timedelta:
-        seconds = 0
-        for match in re.finditer(r"(\d+)([smhd])", arg):
-            value, unit = int(match[1]), match[2]
-            if unit == "s":
-                seconds += value
-            elif unit == "m":
-                seconds += value * 60
-            elif unit == "h":
-                seconds += value * 3600
-            elif unit == "d":
-                seconds += value * 86400
-        return datetime.timedelta(seconds=seconds)
-
-
-@commands.has_permissions(moderate_members=True)
-@bot.hybrid_command()
-async def mute(ctx,
-               user: discord.Member,
-               duration: TimedeltaConverter,
-               *,
-               reason="***No reason provided.***"):
-    """Mutes a user for a specified duration"""
-    try:
-        await user.timeout(duration, reason=reason)
-        await ctx.send(
-            f"{user.mention} has been muted for {duration} due to: {reason}")
-    except discord.Forbidden:
-        await ctx.send("I do not have permission to mute this user.")
-    except discord.HTTPException as e:
-        await ctx.send(f"An error occurred: {e}")
-
-
-# SAY COMMAND
-@commands.has_permissions(manage_messages=True)
-@bot.hybrid_command()
-async def say(ctx, message=None):
-    """ Makes the bot speak """
-    await ctx.send(message)
-
-
-@say.error
-async def say_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
-        await ctx.send('You do not have permission to use this command!')
-    else:
-        raise error
-
-
-# REPLY COMMAND
-@commands.has_permissions(manage_messages=True)
-@bot.hybrid_command()
-async def reply(ctx: commands.Context,
-                message_id,
-                message: str,
-                flag: Literal["True", "False"] = "True"):
-    """Makes the bot reply to a message"""
-    try:
-        target_message = await ctx.channel.fetch_message(message_id)
-        reply_content = message
-        if flag == "True":
-            reply_content = f"{target_message.author.mention} {message}"
-        await target_message.reply(reply_content)
-    except Exception as e:
-        print(e)
 
 
 # WELCOME MESSAGE
@@ -543,26 +233,6 @@ async def on_sh_chain(message: discord.Message):
         await message.add_reaction('<a:shiny:1245070376443318333>')
 
 
-# RNG (roll event)
-@bot.hybrid_command()
-async def rng(ctx, num: int):
-    """ Rolls a random number """
-    rollnum = random.randint(1, num)
-    if rollnum == 123:
-        rngeventwinner = discord.Embed(
-            title=
-            f"{ctx.author.display_name} rolled a {rollnum} and won the event!",
-            description=f"{ctx.author.mention}",
-            colour=0x00f5f1)
-        await ctx.send(embed=rngeventwinner)
-    else:
-        rngeventlose = discord.Embed(
-            title=f"{ctx.author.display_name} rolled a {rollnum}",
-            description=f"{ctx.author.mention}",
-            colour=0x00f5f1)
-        await ctx.send(embed=rngeventlose)
-
-
 # HELP MENU
 class MyHelpCommand(commands.MinimalHelpCommand):
 
@@ -576,18 +246,6 @@ class MyHelpCommand(commands.MinimalHelpCommand):
 
 
 bot.help_command = MyHelpCommand()
-
-
-# FAKE BAN CMD
-@bot.hybrid_command()
-async def bam(ctx, user: discord.User, *, reason="***No reason provided.***"):
-    """ Bans a user from the guild """
-    ban = discord.Embed(
-        title=f"<:bonk:1255222332830515304> | Banned {user.name}!",
-        description=f"Reason: {reason}\nBy: {ctx.author.mention}",
-        color=discord.Color.brand_red())
-    await ctx.channel.send(embed=ban)
-
 
 # CATCH RULES QUIZ
 @commands.is_owner()
@@ -732,14 +390,68 @@ class MultipleChoiceView(View):
             role = discord.utils.get(self.ctx.guild.roles, name="Catch Access")
             if role:
                 await interaction.user.add_roles(role)
+            log_message = f"{interaction.user.mention} passed the quiz - they got {self.correct} / 5"
         else:
             result_text += "Sorry, you did not pass. Please try again."
+            log_message = f"{interaction.user.mention} failed the quiz - they got {self.correct} / 5"
 
         self.embed.description = result_text
         self.embed.set_footer(text="")
-        await interaction.response.edit_message(embed=self.embed, view=None)
+        await interaction.response.edit_message(embed=self.embed, view=None)  # Ensure results are ephemeral
 
+        log_channel = interaction.guild.get_channel(1265641054070112351)
+        if log_channel:
+            await log_channel.send(log_message)
 
+# OLYMPICS EVENT DART COORDS
+def get_dart_coordinates(board):
+    lines = board.split('\n')
+    column_map = {1: "A", 2: "B", 3: "C", 4: "D", 5: "E"}
+    dart_coordinates = []
+
+    for row_idx, line in enumerate(lines[1:], start=1):
+        cells = re.split(r'[:\s]+', line.strip())
+        for col_idx, cell in enumerate(cells[1:], start=1):
+            if cell == 'dart':
+                dart_coordinates.append(f"{column_map[col_idx]}{row_idx}")
+
+    return dart_coordinates
+
+def find_dart_emojis(image):
+    # Convert to RGB (OpenCV loads images in BGR format)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Define the grid dimensions
+    grid_size = 6  # Including the identifiers row and column
+    cell_size = 108 // grid_size  # Each cell is 18x18 pixels
+
+    # Load the dart emoji template
+    template_path = 'dart_emoji_template.png'
+    dart_emoji_template = cv2.imread(template_path)
+
+    # Convert the template to RGB (in case it is loaded as BGR)
+    dart_emoji_template_rgb = cv2.cvtColor(dart_emoji_template, cv2.COLOR_BGR2RGB)
+
+    # Perform template matching
+    result = cv2.matchTemplate(image_rgb, dart_emoji_template_rgb, cv2.TM_CCOEFF_NORMED)
+    threshold = 0.8
+    loc = np.where(result >= threshold)
+
+    # Collect the coordinates of the matched regions
+    dart_coordinates = set()
+    for pt in zip(*loc[::-1]):
+        col, row = pt[0] // cell_size, pt[1] // cell_size
+        if row > 0 and col > 0:  # Exclude the identifier row and column
+            dart_coordinates.add((row, col))
+
+    # Convert coordinates to grid notation
+    grid_coordinates = []
+    for row, col in sorted(dart_coordinates):
+        grid_row = str(row)
+        grid_col = chr(col + ord('A') - 1)
+        grid_coordinates.append(f'{grid_col}{grid_row}')
+
+    return grid_coordinates
 
 # HELP MENU
 # ALARM / REMINDER
