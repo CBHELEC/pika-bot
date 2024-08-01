@@ -18,6 +18,7 @@ import numpy as np
 from io import BytesIO
 from PIL import Image
 import requests
+from bs4 import BeautifulSoup
 
 # COG: Gamble. ROLL, COINFLIP, BAM
 class Fun(commands.Cog):
