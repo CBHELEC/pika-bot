@@ -69,6 +69,15 @@ class Configuration(commands.Cog):
         """ Replies with the Bot's latency """
         await ctx.send(f"Pong! {int(bot.latency*1000)}ms")
 
+# INFO CMD
+    @commands.hybrid_command()
+    async def info(self, ctx):
+        """ Shows info about the Bot """
+        infoembed = discord.Embed(title="Info about Pika-Bot",
+                      description="**__Language__: Python 3.12.4\n__Library__: discord.py\n__Prefix__: + (or slash commands)\n__Owner__: <@820297275448098817>\n__Developer__: <@820297275448098817> and <@770948558031552512>\n__GitHub__: https://github.com/CBHELEC/pika-bot**",
+                      colour=0xf500b4)
+        await ctx.send(embed=infoembed)
+
 # Assuming this is configuration.py
 async def setup(bot):
     await bot.add_cog(Configuration(bot))
