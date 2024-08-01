@@ -90,16 +90,23 @@ class Fun(commands.Cog):
             await ctx.send(embed=rngeventlose)
 
 # GOOGLE CMD
-    @commands.hybrid_command()
+    @commands.command()
     async def google(self, ctx, *, query):
-        """Search Google and return the top 5 results without embedding the links."""
+        """Search Google and return a single text answer."""
         try:
             search_results = []
-            for url in search(query, num_results=5):
-                search_results.append(f"<{url}>")
+            for url in search(query, num_results=1):
+                search_results.append(url)
 
             if search_results:
-                await ctx.send("Here are the top 5 search results:\n" + "\n".join(search_results))
+                first_result_url = search_results[0]
+                response = requests.get(first_result_url)
+                soup = BeautifulSoup(response.text, 'html.parser')
+
+                # Extract text from the first <p> tag or other relevant tag
+                text_snippet = soup.find('p').get_text() if soup.find('p') else "No snippet found."
+
+                await ctx.send(f"Top search result: {first_result_url}\n\n{text_snippet}")
             else:
                 await ctx.send("No results found.")
         except Exception as e:
