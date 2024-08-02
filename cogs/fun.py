@@ -12,7 +12,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
-from googlesearch import search
+from serpapi import GoogleSearch
 import cv2
 import numpy as np
 from io import BytesIO
@@ -95,19 +95,20 @@ class Fun(commands.Cog):
     async def google(self, ctx, *, query):
         """Search Google and return a single text answer."""
         try:
-            search_results = []
-            for url in search(query, num_results=1):
-                search_results.append(url)
+            params = {
+                "engine": "google",
+                "q": query,
+                "api_key": "No Thanks"
+            }
+            search = GoogleSearch(params)
+            results = search.get_dict()
 
-            if search_results:
-                first_result_url = search_results[0]
-                response = requests.get(first_result_url)
-                soup = BeautifulSoup(response.text, 'html.parser')
+            if "organic_results" in results and results["organic_results"]:
+                first_result = results["organic_results"][0]
+                first_result_url = first_result.get("link", "No URL found")
+                snippet = first_result.get("snippet", "No snippet found.")
 
-                # Extract text from the first <p> tag or other relevant tag
-                text_snippet = soup.find('p').get_text() if soup.find('p') else "No snippet found."
-
-                await ctx.send(f"Top search result: {first_result_url}\n\n{text_snippet}")
+                await ctx.send(f"Top search result: {first_result_url}\n\n{snippet}")
             else:
                 await ctx.send("No results found.")
         except Exception as e:
