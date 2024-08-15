@@ -1309,7 +1309,7 @@ async def userinfo(ctx, member: discord.Member = None):
     embed.add_field(
         name="ℹ️ User Info",
         value=(
-            f"User ID: `{member.id}` ({ctx.author.mention})\n"
+            f"User ID: `{member.id}` ({member.mention})\n"
             f"Created: {created_at}\n"
             f"Joined: {joined_at}\n"
             f"Administrator: {admin_permission}\n"
