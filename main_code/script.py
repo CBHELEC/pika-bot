@@ -1,7 +1,8 @@
 import asyncio
 import dataclasses
 import datetime
-from datetime import datetime,timedelta,timezone
+from datetime import timezone
+now = datetime.datetime.now(datetime.timezone.utc)
 import os
 import random
 import re
@@ -1276,9 +1277,6 @@ async def userinfo(ctx, member: discord.Member = None):
     # Fetch user information
     username = member.name  # Actual username for the title
     display_name = member.display_name  # Display name for the author field
-    
-    # Ensure both datetimes are timezone-aware
-    now = datetime.now(timezone.utc)
     
     created_at = f"<t:{int(member.created_at.timestamp())}:f> ({(now - member.created_at).days // 365} years ago)"
     joined_at = f"<t:{int(member.joined_at.timestamp())}:f> ({(now - member.joined_at).days // 30} months ago)"
