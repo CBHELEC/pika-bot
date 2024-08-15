@@ -21,7 +21,6 @@ from serpapi import GoogleSearch
 from bs4 import BeautifulSoup
 import operator
 from googletrans import Translator
-from datetime import datetime
 from datetime import datetime, timezone
 from datetime import timedelta
 
