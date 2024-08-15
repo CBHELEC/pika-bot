@@ -1353,5 +1353,208 @@ async def test(ctx, member: discord.Member = None):
     # Send the output as a message in Discord
     await ctx.send("\n".join(flag_output))
     
+# Command to show server information
+@bot.command(name='serverinfo')
+async def serverinfo(ctx):
+    server = ctx.guild
+    creation_time = int(server.created_at.timestamp())  # Convert creation time to a Unix timestamp
+
+    embed = discord.Embed(title=f"Server Information for {server.name}", color=discord.Color.blue())
+    embed.description = (
+        f"**Server Name**: {server.name}\n"
+        f"**Server ID**: `{server.id}`\n"
+        f"**Member Count**: {server.member_count}\n"
+        f"**Created At**: <t:{creation_time}:f>"
+    )
+    embed.set_thumbnail(url=server.icon.url)
+    
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def avatar(ctx, member: discord.Member = None):
+    if member is None:
+        member = ctx.author  # If no member is mentioned, use the author of the message
+    
+    # Generate the avatar URL
+    avatar_url = member.avatar.url
+    
+    # Send the avatar URL in the chat
+    await ctx.send(f'[{member.display_name}\'s avatar]({avatar_url})')
+
+@bot.command()
+async def servericon(ctx):
+    """Send the server's icon."""
+    server_icon = ctx.guild.icon.url  # Get the server's icon URL
+    await ctx.send(server_icon)  # Send the icon URL to the channel
+
+# List of jokes
+jokes = [
+    "Why don't scientists trust atoms? Because they make up everything!",
+    "Why did the scarecrow win an award? Because he was outstanding in his field!",
+    "Why don't skeletons fight each other? They don't have the guts.",
+    "What do you call fake spaghetti? An impasta!",
+    "Why did the math book look sad? Because it had too many problems."
+]
+# Command to tell a joke
+@bot.command(name='joke')
+async def joke(ctx):
+    # Select a random joke
+    joke = random.choice(jokes)
+    # Send the joke to the channel
+    await ctx.send(joke)
+
+# List of possible answers for the 8ball command
+answers = [
+    "Yes.",
+    "No.",
+    "Maybe.",
+    "I don't know.",
+    "Definitely.",
+    "Absolutely not.",
+    "Could be.",
+    "Probably.",
+    "I'm not sure."
+]
+# Command to handle the 8ball functionality
+@bot.command(name='8ball')
+async def eight_ball(ctx, *, question: str):
+    response = random.choice(answers)  # Randomly select an answer
+    await ctx.send(response)  # Send the response back to the channel
+
+# Command to get a random cat picture
+@bot.command(name='cat')
+async def cat(ctx):
+    response = requests.get('https://api.thecatapi.com/v1/images/search')
+    data = response.json()
+    cat_image_url = data[0]['url']
+    await ctx.send(cat_image_url)
+
+# Command to get a random dog picture
+@bot.command(name='dog')
+async def dog(ctx):
+    response = requests.get('https://dog.ceo/api/breeds/image/random')
+    data = response.json()
+    dog_image_url = data['message']
+    await ctx.send(dog_image_url)
+
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member, *, reason=None):
+    """Kicks the mentioned user from the server."""
+    if reason is None:
+        reason = "No reason provided"
+    try:
+        await member.kick(reason=reason)
+        await ctx.send(f'Kicked {member.mention} for: {reason}')
+    except discord.Forbidden:
+        await ctx.send("I don't have permission to kick that user.")
+    except discord.HTTPException as e:
+        await ctx.send(f'An error occurred: {e}')
+
+@kick.error
+async def kick_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You don't have permission to use this command.")
+
+# Replace 'your_giphy_api_key_here' with your Giphy API key
+GIPHY_API_KEY = 'gC9drTTPIu9gfjNEBk8xDIW6ff8CG8bd'
+GIPHY_API_URL = 'https://api.giphy.com/v1/gifs/random'
+@bot.command()
+async def hug(ctx, member: discord.Member = None):
+    """Sends a virtual hug to the mentioned user with a random GIF from Giphy."""
+    if member is None:
+        member = ctx.author  # If no member is mentioned, use the author of the message
+    params = {
+        'api_key': GIPHY_API_KEY,
+        'tag': 'hug',
+        'rating': 'g'
+    }
+    response = requests.get(GIPHY_API_URL, params=params)
+    
+    if response.status_code == 200:
+        data = response.json()
+        print(data)  # Print response JSON for debugging
+        
+        # Check for the correct field in the response
+        gif_url = data['data']['image_original_url'] if 'image_original_url' in data['data'] else data['data']['images']['original']['url']
+        await ctx.send(f'{ctx.author.mention} hugs {member.mention}! [UwU]({gif_url})')
+    else:
+        await ctx.send('Could not fetch a hug GIF at the moment. Please try again later.')
+
+
+@bot.hybrid_command(
+    name="purge", 
+    description="Purge messages based on different modes."
+)
+@commands.has_permissions(manage_messages=True)
+async def purge(
+    ctx: commands.Context, 
+    number: int, 
+    mode: str = "recent", 
+    user: discord.Member = None, 
+    message_ids: str = ""
+):
+    """
+    Hybrid command for purging messages with multiple modes.
+    
+    Parameters:
+    - number: Number of messages to purge
+    - mode: Purging mode (recent, user, exclude_user, exclude_pinned, exclude_ids)
+    - user: User to target or exclude for the purge (optional)
+    - message_ids: Space-separated message IDs to exclude (optional, used in exclude_ids mode)
+    """
+    # Defer the response for slash commands to avoid the "application did not respond" error
+    if ctx.interaction:
+        await ctx.defer(ephemeral=True)
+    
+    # Validate number of messages
+    if number < 1 or number > 100:
+        await ctx.send("Please specify a number between 1 and 100.", ephemeral=True)
+        return
+    
+    # Convert message_ids into a list of integers
+    message_ids_list = list(map(int, message_ids.split())) if message_ids else []
+
+    # Mode Logic
+    if mode == "recent":
+        # Delete the most recent `x` messages
+        deleted = await ctx.channel.purge(limit=number)
+
+    elif mode == "user" and user:
+        # Delete the most recent `x` messages by the specific user
+        def check(msg):
+            return msg.author == user
+        deleted = await ctx.channel.purge(limit=number * 2, check=check)
+
+    elif mode == "exclude_user" and user:
+        # Delete the most recent `x` messages, excluding those by the specific user
+        def check(msg):
+            return msg.author != user
+        deleted = await ctx.channel.purge(limit=number, check=check)
+
+    elif mode == "exclude_pinned":
+        # Delete the most recent `x` messages, excluding pinned messages
+        def check(msg):
+            return not msg.pinned
+        deleted = await ctx.channel.purge(limit=number, check=check)
+
+    elif mode == "exclude_ids" and message_ids_list:
+        # Delete the most recent `x` messages, excluding specific message IDs
+        def check(msg):
+            return msg.id not in message_ids_list
+        deleted = await ctx.channel.purge(limit=number, check=check)
+
+    else:
+        await ctx.send("Invalid mode or missing parameters.", ephemeral=True)
+        return
+
+    # Send confirmation message
+    if ctx.interaction:  # Slash command
+        await ctx.send(f'<a:tick:1273721261905678377>', ephemeral=True)
+    else:  # Prefix command
+        await ctx.send(f'<a:tick:1273721261905678377>', delete_after=5)
+        # Delete the command message if invoked via prefix
+        await ctx.message.delete()
+    
 # IN PROGRESS CODE:
 bot.run(TOKEN)
