@@ -1556,5 +1556,144 @@ async def purge(
         # Delete the command message if invoked via prefix
         await ctx.message.delete()
     
+# Expanded lists of random facts, quotes, and advice
+facts = [
+    "Honey never spoils.",
+    "A day on Venus is longer than a year.",
+    "Octopuses have three hearts.",
+    "Bananas are berries, but strawberries aren't.",
+    "The Eiffel Tower can be 15 cm taller during the summer.",
+    "Sharks existed before trees.",
+    "Wombat poop is cube-shaped.",
+    "Humans share 60% of their DNA with bananas.",
+    "An astronaut's footprint on the moon can last up to 100 million years.",
+    "A group of flamingos is called a 'flamboyance'.",
+    "Koalas have fingerprints that are almost identical to humans.",
+    "The shortest war in history lasted 38 to 45 minutes."
+]
+
+quotes = [
+    "The best way to predict the future is to create it. - Abraham Lincoln",
+    "Success is not the key to happiness. Happiness is the key to success. - Albert Schweitzer",
+    "Don't watch the clock; do what it does. Keep going. - Sam Levenson",
+    "The only limit to our realization of tomorrow is our doubts of today. - Franklin D. Roosevelt",
+    "Believe you can and you're halfway there. - Theodore Roosevelt",
+    "It always seems impossible until it's done. - Nelson Mandela",
+    "Your time is limited, don't waste it living someone else's life. - Steve Jobs",
+    "The only way to do great work is to love what you do. - Steve Jobs",
+    "Don't let yesterday take up too much of today. - Will Rogers",
+    "You miss 100% of the shots you don't take. - Wayne Gretzky",
+    "Do what you can, with what you have, where you are. - Theodore Roosevelt",
+    "The best time to plant a tree was 20 years ago. The second best time is now. - Chinese Proverb",
+    "Act as if what you do makes a difference. It does. - William James"
+]
+
+advice_list = [
+    "Believe in yourself and all that you are.",
+    "Be kind to yourself and others.",
+    "Focus on the good, even on bad days.",
+    "Don't compare your life to others'.",
+    "Take it one day at a time.",
+    "Get enough sleep; your body needs rest to perform its best.",
+    "Don't be afraid to fail; it's how you learn and grow.",
+    "Listen more than you speak, and you'll learn a lot.",
+    "Surround yourself with positive people.",
+    "Celebrate small victories.",
+    "Step out of your comfort zone every once in a while.",
+    "Take breaks when you're feeling overwhelmed.",
+    "Never stop learning, no matter your age or situation."
+]
+# !fact command
+@bot.command(name='fact')
+async def fact(ctx):
+    response = random.choice(facts)
+    await ctx.send(response)
+
+# !quote command
+@bot.command(name='quote')
+async def quote(ctx):
+    response = random.choice(quotes)
+    await ctx.send(response)
+
+# !advice command
+@bot.command(name='advice')
+async def get_advice(ctx):
+    response = random.choice(advice_list)
+    await ctx.send(response)
+
+# Your Calendarific API key
+CALENDARIFIC_API_KEY = 'yqTC5nXMG8LX1qk71SEoPQNvIcWAgVDr'
+BASE_URL = 'https://calendarific.com/api/v2/holidays'
+@bot.command()
+async def todayinhistory(ctx):
+    today = datetime.now().strftime('%Y-%m-%d')
+    params = {
+        'api_key': CALENDARIFIC_API_KEY,
+        'country': 'US',  # Change this to the country code you want
+        'year': datetime.now().year,
+        'month': datetime.now().month,
+        'day': datetime.now().day,
+        'type': 'historical'  # To get historical events
+    }
+
+    response = requests.get(BASE_URL, params=params)
+    data = response.json()
+
+    if data.get('response') and data['response'].get('holidays'):
+        holidays = data['response']['holidays']
+        if holidays:
+            event = holidays[0].get('name', 'No event found for today.')
+            await ctx.send(f"Today in history: {event}")
+        else:
+            await ctx.send("No historical events recorded for today.")
+    else:
+        await ctx.send("Could not retrieve historical events.")
+
+@bot.command()
+async def testtodayinhistory(ctx):
+    try:
+        today = datetime.now().strftime('%Y-%m-%d')
+        params = {
+            'api_key': CALENDARIFIC_API_KEY,
+            'country': 'US',  # Replace with your desired country code
+            'year': datetime.now().year,
+            'month': datetime.now().month,
+            'day': datetime.now().day,
+            'type': 'historical'
+        }
+
+        response = requests.get(BASE_URL, params=params)
+        
+        # Print the raw response text for debugging
+        print(f"Response Status Code: {response.status_code}")
+        print(f"Response Content: {response.text}")
+
+        # Check if the response is empty
+        if response.text.strip() == "":
+            await ctx.send("The API response is empty.")
+            return
+
+        # Try to parse JSON response
+        data = response.json()
+
+        if data.get('response') and data['response'].get('holidays'):
+            holidays = data['response']['holidays']
+            if holidays:
+                event = holidays[0].get('name', 'No event found for today.')
+                await ctx.send(f"Today in history: {event}")
+            else:
+                await ctx.send("No historical events recorded for today.")
+        else:
+            await ctx.send("Could not retrieve historical events.")
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+        await ctx.send(f"HTTP error occurred: {http_err}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"Request error occurred: {req_err}")
+        await ctx.send(f"Request error occurred: {req_err}")
+    except Exception as e:
+        print(f"Exception: {e}")
+        await ctx.send(f"An error occurred: {e}")
+    
 # IN PROGRESS CODE:
 bot.run(TOKEN)
