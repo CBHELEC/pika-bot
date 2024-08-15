@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import datetime
+from datetime import datetime,timedelta,timezone
 import os
 import random
 import re
@@ -21,8 +22,6 @@ from serpapi import GoogleSearch
 from bs4 import BeautifulSoup
 import operator
 from googletrans import Translator
-from datetime import datetime, timezone
-from datetime import timedelta
 
 # DOTENV
 from dotenv import load_dotenv
