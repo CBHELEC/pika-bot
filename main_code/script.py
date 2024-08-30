@@ -1,8 +1,9 @@
 import asyncio
 import dataclasses
 import datetime
-from datetime import timezone
-now = datetime.datetime.now(datetime.timezone.utc)
+from datetime import datetime
+now = datetime.now
+delta = datetime.timedelta
 import os
 import random
 import re
@@ -89,21 +90,21 @@ async def on_message(message):
 async def on_member_join(member):
     rollnum = random.randint(1, 1000)
     if rollnum == 1000:
-        e = bot.get_channel(1245024320804360234)
+        asdf = bot.get_channel(1245024320804360234)
         extrawelcome = discord.Embed(
             title=f"Heya, {member.display_name}, welcome to The Pikachu Crew!",
             description=
             f"Welcome to The Pikachu Crew, {member.mention}. I hope you enjoy your time here! Please use the dropdown menu below to navigate to useful channels. We also have a limited time event going on, Boost Rewards! WOW! This message seems unusual. {member.mention} has defied the odds and is the lucky one who gets a special reward! Please make a https://discord.com/channels/1237815910887194624/1237874844595654707 to claim this reward!",
             color=0x00FF59)
-        await e.send(embed=extrawelcome, view=SelectView())
+        await asdf.send(embed=extrawelcome, view=SelectView())
     else:
-        e = bot.get_channel(1245024320804360234)
+        asdf = bot.get_channel(1245024320804360234)
         welcome = discord.Embed(
             title=f"Heya, {member.display_name}, welcome to The Pikachu Crew!",
             description=
             f"Welcome to The Pikachu Crew, {member.mention}. I hope you enjoy your time here! Please use the dropdown menu below to navigate to useful channels. We also have a limited time event going on, Boost Rewards!",
             color=0x00FF59)
-        await e.send(embed=welcome, view=SelectView())
+        await asdf.send(embed=welcome, view=SelectView())
 
 
 class Select(discord.ui.Select):
@@ -709,28 +710,29 @@ class Fun(commands.Cog):
             await ctx.send(embed=rngeventlose)
 
 # GOOGLE CMD
-    @commands.command()
-    async def google(self, ctx, *, query):
-        """Search Google and return a single text answer."""
-        try:
-            params = {
-                "engine": "google",
-                "q": query,
-                "api_key": "d65d9240b803d18e84ff5ed91affb851171f0ab5732fe42957f603c6c9f33962"
-            }
-            search = GoogleSearch(params)
-            results = search.get_dict()
+@bot.command()
+async def google(ctx, *, query):
+    """Search Google and return a single text answer, with SafeSearch enabled."""
+    try:
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": "d65d9240b803d18e84ff5ed91affb851171f0ab5732fe42957f603c6c9f33962",  # Replace with your actual SerpApi key
+            "safe": "active"  # Enable SafeSearch to filter out NSFW content
+        }
+        search = GoogleSearch(params)
+        results = search.get_dict()
 
-            if "organic_results" in results and results["organic_results"]:
-                first_result = results["organic_results"][0]
-                first_result_url = first_result.get("link", "No URL found")
-                snippet = first_result.get("snippet", "No snippet found.")
+        if "organic_results" in results and results["organic_results"]:
+            first_result = results["organic_results"][0]
+            first_result_url = first_result.get("link", "No URL found")
+            snippet = first_result.get("snippet", "No snippet found.")
 
-                await ctx.send(f"Top search result: {first_result_url}\n\n{snippet}")
-            else:
-                await ctx.send("No results found.")
-        except Exception as e:
-            await ctx.send(f"An error occurred: {str(e)}")
+            await ctx.send(f"Top search result: {first_result_url}\n\n{snippet}")
+        else:
+            await ctx.send("No results found.")
+    except Exception as e:
+        await ctx.send(f"An error occurred: {str(e)}")
 
 # MATH CMD
 operators = {
@@ -1694,6 +1696,65 @@ async def testtodayinhistory(ctx):
     except Exception as e:
         print(f"Exception: {e}")
         await ctx.send(f"An error occurred: {e}")
+
+DISBOARD_ID = 302050872383242240  # DISBOARD Bot's ID
+@bot.event
+async def on_message(message):
+    prizeroll = random.randint(1,100)
+    # Avoid responding to the bot's own messages
+    if message.author == bot.user:
+        return
+
+    # Check if the author is DISBOARD
+    if message.author.id == DISBOARD_ID:
+        # Check if the message contains an embed
+        if message.embeds:
+            embed = message.embeds[0]  # Assuming there's only one embed
+            
+            # Check for specific details in the embed
+            if (embed.title == "DISBOARD: The Public Server List" and
+                "Bump done!" in embed.description and
+                embed.image.url):  # Check if there's an image in the embed
+                
+                thanksforthebump=discord.Embed(color=discord.Color.random(),
+                                               title="Thanks for the bump!",
+                                               description="Thanks for supporting the server - it means a lot to us!"
+                                               )
+                thanksforthebump.set_thumbnail(url="https://cdn.discordapp.com/attachments/1198631394046386205/1273950010907693098/cMgHHXz.png?ex=66c079e7&is=66bf2867&hm=82347c96ada51e1fda6b6b7c7177069ad2fdb4daf61f93f68a877898b33632c6&")
+                thebumphasaprize=discord.Embed(color=discord.Color.dark_teal(),
+                                               title="Something is happening... <a:sparkles1:1258881926169890817><a:sparkles1:1258881926169890817>",
+                                               description="Thanks for supporting the server - it means a lot to us!"
+                                               )
+                thebumphasaprize.set_thumbnail(url="https://cdn.discordapp.com/attachments/1198631394046386205/1273953641631453206/eLcFvF9.png?ex=66c07d49&is=66bf2bc9&hm=09dab44154a692903866744493246a8d6a97b6baba6b7f0e1cf85f205e9c4ed6&")
+                thebumphasaprize2=discord.Embed(color=discord.Color.teal(),
+                                               title="Your bump is special - you won a <:sparkles2:1258881964170022963><a:sparkles1:1258881926169890817> Spearow! <:charmander_yay:1262828535941431306>",
+                                               description="Thanks for supporting the server - it means a lot to us!"
+                                               )
+                thebumphasaprize2.set_thumbnail(url="https://cdn.discordapp.com/attachments/1198631394046386205/1273953641631453206/eLcFvF9.png?ex=66c07d49&is=66bf2bc9&hm=09dab44154a692903866744493246a8d6a97b6baba6b7f0e1cf85f205e9c4ed6&")
+                if prizeroll <100:
+                # Respond with a message (or perform some other action)
+                    await message.channel.send(embed=thanksforthebump)
+                else:
+                    sent_message = await message.channel.send(embed=thebumphasaprize)
+                    await asyncio.sleep(3)
+                    await sent_message.edit(embed=thebumphasaprize2)
+    
+    # Allows other commands to work
+    await bot.process_commands(message)
+    
+@bot.event
+async def on_member_join(member):
+    b = bot.get_channel(1274719193442291713) # pokebay
+    c = bot.get_channel(1275782778469748860) # vulpix-wonderland
+    d = bot.get_channel(1269038111044665384) # big-gw
+    e = bot.get_channel(1256615261260480573) # catch-rules
+    f = bot.get_channel(1239284848057651391) # rules
+  #  g = bot.get_channel(1239313677241552966) # general - test
+    await b.send(f"{member.mention}", delete_after=10)
+    await c.send(f"{member.mention}", delete_after=10)
+    await d.send(f"{member.mention}", delete_after=10)
+    await e.send(f"{member.mention}", delete_after=10)
+    await f.send(f"{member.mention}", delete_after=10)
     
 # IN PROGRESS CODE:
 bot.run(TOKEN)
