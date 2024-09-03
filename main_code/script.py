@@ -1,9 +1,6 @@
 import asyncio
 import dataclasses
 import datetime
-from datetime import datetime
-now = datetime.now
-delta = datetime.timedelta
 import os
 import random
 import re
@@ -289,7 +286,7 @@ questions = [
                    answer=0),
     MultipleChoice(question="A rare spawns in Booster/Donator channel. What do you do?",
                    choices=["Catch it", "Catch it for your dex", "Ping staff", "Leave it"],
-                   answer=1),
+                   answer=0),
     MultipleChoice(question="What do you do if you want to lock a pokemon?",
                    choices=["Use the command", "Leave it", "Ping staff", "Ping Donators"],
                    answer=2),
