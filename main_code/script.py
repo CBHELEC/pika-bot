@@ -1743,15 +1743,58 @@ async def on_message(message):
 async def on_member_join(member):
     b = bot.get_channel(1274719193442291713) # pokebay
     c = bot.get_channel(1275782778469748860) # vulpix-wonderland
-    d = bot.get_channel(1269038111044665384) # big-gw
+    #d = bot.get_channel(1269038111044665384) # big-gw
     e = bot.get_channel(1256615261260480573) # catch-rules
     f = bot.get_channel(1239284848057651391) # rules
-  #  g = bot.get_channel(1239313677241552966) # general - test
+    #g = bot.get_channel(1239313677241552966) # general - test
+    h = bot.get_channel(1283821271645159454) # shinykarp
+    i = bot.get_channel(1284235152897085530) # crimson
     await b.send(f"{member.mention}", delete_after=10)
     await c.send(f"{member.mention}", delete_after=10)
-    await d.send(f"{member.mention}", delete_after=10)
+    #await d.send(f"{member.mention}", delete_after=10)
     await e.send(f"{member.mention}", delete_after=10)
     await f.send(f"{member.mention}", delete_after=10)
+    await h.send(f"{member.mention}", delete_after=10)
+    await i.send(f"{member.mention}", delete_after=10)
+    
+# Define the parent role ID
+PARENT_ROLE_ID = 1276219572759826513  # Replace with your specific role ID
+
+@commands.has_permissions(ban_members=True)
+@bot.hybrid_command(name='role', description='Add or remove a role from a user.')
+@app_commands.describe(
+    user='The user to add or remove roles from.',
+    action="Choose 'add' or 'remove'",
+    role='The role to add or remove.'
+)
+async def role(ctx: commands.Context, user: discord.Member, action: Literal['add', 'remove'], role: discord.Role):
+    # Check if the role is under the specified role in the hierarchy
+    parent_role = discord.utils.get(ctx.guild.roles, id=PARENT_ROLE_ID)
+    if not parent_role:
+        await ctx.send("The parent role with the specified ID does not exist.")
+        return
+
+    if role.position >= parent_role.position:
+        await ctx.send(f"The role <@&{role.id}> cannot be managed because it is above the highest role I am allowed to manage.")
+        return
+
+    # Perform the role action
+    if action == 'add':
+        await user.add_roles(role)
+        message = f"Added {role.name} to {user.mention}."
+    elif action == 'remove':
+        await user.remove_roles(role)
+        message = f"Removed {role.name} from {user.mention}."
+    else:
+        message = "Invalid action. Use 'add' or 'remove'."
+
+    # Check if the command was invoked as a slash command or a text command
+    if isinstance(ctx, discord.Interaction):
+        # If it's a slash command
+        await ctx.response.send_message(message)
+    else:
+        # If it's a text command
+        await ctx.send(message)
     
 # IN PROGRESS CODE:
 bot.run(TOKEN)
