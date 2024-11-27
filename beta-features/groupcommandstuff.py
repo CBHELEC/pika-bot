@@ -24,6 +24,7 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
     print('------------------------')
     await bot.tree.sync()
+    # yes, i know this is bad. do I care? no.
     ensure_columns_exist_players()
     ensure_columns_exist_catches()
     await bot.change_presence(
@@ -660,6 +661,7 @@ async def reset(ctx, user: discord.Member = None):
     await ctx.send(f"🔄 {user.mention}'s fishing data has been reset!")
     
 @bot.hybrid_group(invoke_without_command=True)
+# this is where i get the error. im assuming i did smth wrong here?
 async def admin(ctx):
     """Shows admin commands"""
     # Admin Command Embed Template: https://embed.dan.onl/?data=eyJhdXRob3IiOnsibmFtZSI6IlZvbHRpZnkgQWRtaW4gQ29tbWFuZHMgfCB7Y29tbWFuZF9uYW1lfSIsImljb25VcmwiOiJodHRwczovL2kuaW1ndXIuY29tLzJVenhlbEYuanBlZyJ9LCJ0aXRsZSI6IkFkZGVkIHthZGRhbW91bnR9IHNwYXJrcyB0byB7dXNlcm5hbWV9IiwiZGVzY3JpcHRpb24iOiJUaGVpciBmaW5hbCBiYWxhbmNlIGlzIHtmaW5hbGJhbH0gc3BhcmtzLiIsImNvbG9yIjoiIzAwYjBmNCIsImZvb3RlciI6eyJ0ZXh0Ijoie2N0eC5hdXRob3IubmFtZX0iLCJpY29uVXJsIjoie2N0eC5hdXRob3IuYXZhdGFyLnVybH0ifSwidGltZXN0YW1wIjoxNzMyNzMyNDkwMDQ3fQ%3D%3D
