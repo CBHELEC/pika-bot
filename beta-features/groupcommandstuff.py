@@ -13,7 +13,7 @@ from discord.ui import Button, View
 from dotenv import load_dotenv
 load_dotenv(".env")
 TOKEN = os.getenv('BOT_TOKEN')
-VOLTIFY_GUILD = os.getenv('VOLTIFY_GUILD')
+nuhuhyoudontknowthis_GUILD = os.getenv('nuhuhyoudontknowthis_GUILD')
 
 intents = discord.Intents.all()
 
@@ -30,7 +30,7 @@ async def on_ready():
     await bot.change_presence(
         activity=discord.CustomActivity(f"Being Cute <3"))
 
-voltify_prefix = "v."
+nuhuhyoudontknowthis_prefix = "v."
 
 # User Isn't Player Embed: https://embed.dan.onl/?data=eyJ0aXRsZSI6IllvdSBoYXZlbid0IHN0YXJ0ZWQgZmlzaGluZyEiLCJkZXNjcmlwdGlvbiI6IlVzZSBge3ZvbHRpZnlfcHJlZml4fXN0YXJ0YCB0byBiZWdpbi4iLCJjb2xvciI6IiMwMGIwZjQiLCJmb290ZXIiOnsidGV4dCI6IntjdHguYXV0aG9yLm5hbWV9IiwiaWNvblVybCI6IntjdHguYXV0aG9yLmF2YXRhci51cmx9In0sInRpbWVzdGFtcCI6MTczMjczMjcyNDU4MX0%3D
 
@@ -215,7 +215,7 @@ async def start(ctx):
     """, (user_id, start_date))
     conn.commit()
 
-    await ctx.send(f"🌊 {ctx.author.mention}, your fishing adventure has begun! Type `{voltify_prefix}help` for available commands.")
+    await ctx.send(f"🌊 {ctx.author.mention}, your fishing adventure has begun! Type `{nuhuhyoudontknowthis_prefix}help` for available commands.")
 
 @bot.command()
 @commands.cooldown(1, 15, commands.BucketType.user)
@@ -226,7 +226,7 @@ async def testfish(ctx):
     # Ensure player has started
     cursor.execute("SELECT * FROM players WHERE user_id = ?", (user_id,))
     if not cursor.fetchone():
-        await ctx.send(f"❌ You haven't started your fishing adventure! Use {voltify_prefix}start to begin.")
+        await ctx.send(f"❌ You haven't started your fishing adventure! Use {nuhuhyoudontknowthis_prefix}start to begin.")
         return
 
     # Determine rarity and fish
@@ -401,7 +401,7 @@ async def bucket(ctx):
     fish_collection = cursor.fetchall()
 
     if not fish_collection:
-        await ctx.send(f"🐟 {ctx.author.mention}, your bucket is empty! Try fishing with `{voltify_prefix}fish`.")
+        await ctx.send(f"🐟 {ctx.author.mention}, your bucket is empty! Try fishing with `{nuhuhyoudontknowthis_prefix}fish`.")
         return
 
     # Constants
@@ -526,7 +526,7 @@ async def upgrade_rod(ctx):
         else:
             await ctx.reply(f"❌ | You need {cost} sparks to upgrade your rod.")
     else:
-        await ctx.reply(f"❌ | You haven't started fishing! Use `{voltify_prefix}start` to begin.")
+        await ctx.reply(f"❌ | You haven't started fishing! Use `{nuhuhyoudontknowthis_prefix}start` to begin.")
 
 @bot.hybrid_command()
 async def stats(ctx):
@@ -538,7 +538,7 @@ async def stats(ctx):
     player = cursor.fetchone()
 
     if not player:
-        await ctx.send(f"❌ You haven't started your fishing adventure! Use `{voltify_prefix}start` to begin.")
+        await ctx.send(f"❌ You haven't started your fishing adventure! Use `{nuhuhyoudontknowthis_prefix}start` to begin.")
         return
 
     # Extract player data
@@ -576,7 +576,7 @@ async def leaderboard(ctx):
         )
         await ctx.send(f"🏆 **Fishing Leaderboard** 🏆\n{leaderboard_text}")
     else:
-        await ctx.send(f"❌ No players on the leaderboard yet. Start fishing with `{voltify_prefix}fish`!")
+        await ctx.send(f"❌ No players on the leaderboard yet. Start fishing with `{nuhuhyoudontknowthis_prefix}fish`!")
 
 class CustomHelpCommand(commands.HelpCommand):
     def __init__(self):
@@ -585,7 +585,7 @@ class CustomHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         """Display the main help menu."""
         embed = discord.Embed(
-            title="Voltify Commands",
+            title="nuhuhyoudontknowthis Commands",
             description="Here are the available commands:",
             color=discord.Color.blue()
         )
@@ -641,7 +641,7 @@ async def reset(ctx, user: discord.Member = None):
     player = cursor.fetchone()
     
     if not player:
-        await ctx.send(f"❌ {user.mention} hasn't started their fishing adventure! Use `{voltify_prefix}start` to begin.")
+        await ctx.send(f"❌ {user.mention} hasn't started their fishing adventure! Use `{nuhuhyoudontknowthis_prefix}start` to begin.")
         return
 
     # Reset the user's fish bag, balance, and stats
@@ -701,7 +701,7 @@ async def add(ctx, addamount: int, user: discord.Member = None):
     player = cursor.fetchone()
     if not player:
         embed = discord.Embed(title="You haven't started fishing!",
-                      description=f"Use `{voltify_prefix}start` to begin.",
+                      description=f"Use `{nuhuhyoudontknowthis_prefix}start` to begin.",
                       colour=0x5697a9,
                       timestamp=datetime.now())
 
@@ -718,7 +718,7 @@ async def add(ctx, addamount: int, user: discord.Member = None):
                       colour=0x5697a9,
                       timestamp=datetime.now())
 
-    embed.set_author(name=f"Voltify Admin Commands | {command_name}",
+    embed.set_author(name=f"nuhuhyoudontknowthis Admin Commands | {command_name}",
                  icon_url="https://i.imgur.com/2UzxelF.jpeg")
 
     embed.set_footer(text=f"{ctx.author.name}",
