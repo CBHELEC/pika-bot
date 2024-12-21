@@ -1695,4 +1695,37 @@ async def adminfish_error(ctx, error):
         await asyncio.sleep(remaining_time)
         await message.delete()
 
+    elif isinstance(error, commands.MissingPermissions):
+        embed = discord.Embed(
+            title="❌| Permission Denied",
+            description="You do not have the required permissions to use this command.",
+            colour=0xff0000
+        )
+        await ctx.send(embed=embed)
+
+    elif isinstance(error, commands.MissingRequiredArgument):
+        embed = discord.Embed(
+            title="❓| Missing Argument",
+            description="One or more required arguments are missing. Please check your input.",
+            colour=0xffa500
+        )
+        await ctx.send(embed=embed)
+
+    elif isinstance(error, commands.BadArgument):
+        embed = discord.Embed(
+            title="⚠️| Invalid Argument",
+            description="An invalid argument was provided. Please check your input and try again.",
+            colour=0xffa500
+        )
+        await ctx.send(embed=embed)
+
+    else:
+        embed = discord.Embed(
+            title="❗| Unexpected Error",
+            description="An unexpected error occurred. The administrators have been notified.",
+            colour=0xff0000
+        )
+        await ctx.send(embed=embed)
+        raise error
+
 bot.run(TOKEN)
